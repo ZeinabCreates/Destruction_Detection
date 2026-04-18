@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cross-Border Damage Analytics Map</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="map-stage" aria-label="Cross-border damage analytics map">
+        <div class="map-toolbar" aria-label="Map controls">
+          <div>
+            <p class="eyebrow">Cross-Border Damage Analytics</p>
+            <h1>Damage signals over time</h1>
+          </div>
+          <div class="toolbar-actions">
+            <button id="zoomOut" type="button" aria-label="Zoom out">-</button>
+            <button id="zoomIn" type="button" aria-label="Zoom in">+</button>
+            <button id="resetView" type="button">Reset</button>
+          </div>
+        </div>
+
+        <div id="map" class="map" role="application" aria-label="Interactive Lebanon map">
+          <div id="tileLayer" class="tile-layer" aria-hidden="true"></div>
+          <svg id="overlay" class="overlay" aria-label="Damage polygons"></svg>
+          <div id="mapTooltip" class="map-tooltip" hidden></div>
+          <div id="hoverStatus" class="hover-status">Hover over the map</div>
+          <div id="mapSource" class="map-source">Esri World Imagery</div>
+          <div class="legend" aria-label="Damage severity legend">
+            <span>Lower</span>
+            <i class="legend-ramp"></i>
+            <span>Higher</span>
+            <span class="event-legend-dot" aria-hidden="true"></span>
+            <span>Events</span>
+          </div>
+        </div>
+
+        <div class="timeline">
+          <div class="timeline-copy">
+            <strong id="activeDateLabel">Loading</strong>
+            <span id="activeDateDescription">Choose a date window.</span>
+          </div>
+          <input id="dateSlider" type="range" min="0" max="0" value="0" step="1" />
+          <div id="dateTicks" class="date-ticks" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <aside class="inspector" aria-label="Damage analytics panel">
+        <section class="controls">
+          <label>
+            Minimum confidence
+            <input id="confidenceFilter" type="range" min="0" max="100" value="55" step="5" />
+            <span id="confidenceLabel">55%</span>
+          </label>
+          <label>
+            Area focus
+            <select id="areaFilter">
+              <option value="all">All mapped areas</option>
+              <option value="beirut">Beirut metro</option>
+              <option value="south">South and Nabatiyeh</option>
+              <option value="bekaa">Bekaa and Baalbek-Hermel</option>
+              <option value="israel">Northern Israel</option>
+            </select>
+          </label>
+          <label>
+            Village review
+            <select id="villageSelect"></select>
+          </label>
+          <label class="toggle-row">
+            <input id="popupToggle" type="checkbox" checked />
+            <span>Show map popups</span>
+          </label>
+          <label class="toggle-row">
+            <input id="eventToggle" type="checkbox" />
+            <span>Show sample event markers</span>
+          </label>
+          <p class="control-note">
+            Sample event markers are contextual incident points from the demo dataset, not confirmed destruction.
+          </p>
+          <button id="exportCsv" type="button">Export visible CSV</button>
+        </section>
+
+        <section class="metrics" aria-label="Summary metrics">
+          <article class="metric-tile">
+            <span>Estimated damaged buildings</span>
+            <strong id="metricBuildings">0</strong>
+          </article>
+          <article class="metric-tile">
+            <span>Mean damage probability</span>
+            <strong id="metricProbability">0%</strong>
+          </article>
+          <article class="metric-tile">
+            <span>Mapped neighborhoods</span>
+            <strong id="metricNeighborhoods">0</strong>
+          </article>
+        </section>
+
+        <section class="selected-area">
+          <div class="section-heading">
+            <p class="eyebrow">Selected Area</p>
+            <h2 id="selectedName">No area selected</h2>
+          </div>
+          <dl class="detail-list">
+            <div>
+              <dt>Severity index</dt>
+              <dd id="selectedSeverity">Select a polygon</dd>
+            </div>
+            <div>
+              <dt>Confidence</dt>
+              <dd id="selectedConfidence">-</dd>
+            </div>
+            <div>
+              <dt>Image source</dt>
+              <dd id="selectedSource">-</dd>
+            </div>
+            <div>
+              <dt>Validation</dt>
+              <dd id="selectedValidation">Demo value</dd>
+            </div>
+          </dl>
+          <div class="sparkline-wrap">
+            <svg id="sparkline" class="sparkline" aria-label="Selected area trend"></svg>
+          </div>
+        </section>
+
+        <section class="validation-review">
+          <div class="section-heading">
+            <p class="eyebrow">Validation</p>
+            <h2>Review this signal</h2>
+          </div>
+          <label>
+            Status
+            <select id="validationStatus">
+              <option value="demo">Demo value</option>
+              <option value="suspected">Suspected ML signal</option>
+              <option value="analyst-reviewed">Analyst reviewed</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="rejected">Rejected / false positive</option>
+            </select>
+          </label>
+          <label>
+            Evidence source
+            <select id="evidenceSource">
+              <option value="none">No evidence attached</option>
+              <option value="sentinel">Sentinel-derived change</option>
+              <option value="public-imagery">Public imagery review</option>
+              <option value="high-res">High-resolution imagery</option>
+              <option value="field-report">Field report</option>
+              <option value="media-osint">Media / OSINT</option>
+              <option value="local-authority">Local authority report</option>
+            </select>
+          </label>
+          <label>
+            Reviewer notes
+            <textarea id="reviewNotes" rows="3" placeholder="Add what evidence supports or rejects this signal."></textarea>
+          </label>
+          <button id="saveValidation" type="button">Save validation</button>
+          <p id="validationSaved" class="validation-saved">Not saved yet</p>
+        </section>
+
+        <section class="imagery-review">
+          <div class="section-heading">
+            <p class="eyebrow">Before / After</p>
+            <h2 id="imageryTitle">Village imagery review</h2>
+          </div>
+          <div class="imagery-controls">
+            <label>
+              Imagery source
+              <select id="imageryMode">
+                <option value="clarity">Clear high-res reference</option>
+                <option value="dated">Dated public imagery</option>
+                <option value="analytic">Analytic mockup</option>
+              </select>
+            </label>
+            <label>
+              After image date
+              <input id="afterImageryDate" type="date" />
+            </label>
+            <button id="useLatestImagery" type="button">Use latest public date</button>
+          </div>
+          <div class="image-pair">
+            <figure>
+              <figcaption id="beforeImageLabel">Before baseline</figcaption>
+              <button id="beforeImage" class="review-image" type="button" aria-label="Open before image"></button>
+            </figure>
+            <figure>
+              <figcaption id="afterImageLabel">After assessment</figcaption>
+              <button id="afterImage" class="review-image" type="button" aria-label="Open after image"></button>
+            </figure>
+          </div>
+          <p id="imageryCaption" class="imagery-caption">
+            Select a village to inspect the before and after signal.
+          </p>
+          <dl class="imagery-stats">
+            <div>
+              <dt>Baseline</dt>
+              <dd id="baselineSeverity">-</dd>
+            </div>
+            <div>
+              <dt>Current</dt>
+              <dd id="afterSeverity">-</dd>
+            </div>
+            <div>
+              <dt>Change</dt>
+              <dd id="buildingDelta">-</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="rankings">
+          <div class="section-heading">
+            <p class="eyebrow">Priority Review</p>
+            <h2>Highest current signals</h2>
+          </div>
+          <ol id="rankingList" class="ranking-list"></ol>
+        </section>
+
+        <section class="method">
+          <div class="section-heading">
+            <p class="eyebrow">Model Output</p>
+            <h2>Damage probability, not confirmation</h2>
+          </div>
+          <p>
+            This MVP reads neighborhood-level inference outputs with confidence scores.
+            Replace the local sample with Sentinel-1, Sentinel-2, or VHR imagery results
+            after validation.
+          </p>
+        </section>
+      </aside>
+    </main>
+
+    <div id="imageLightbox" class="image-lightbox" hidden>
+      <button id="closeLightbox" class="lightbox-close" type="button" aria-label="Close image">Close</button>
+      <div id="lightboxImage" class="lightbox-image" role="img" aria-label="Expanded satellite image"></div>
+    </div>
+
+    <script src="./app-data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

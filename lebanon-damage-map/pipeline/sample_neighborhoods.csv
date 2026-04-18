@@ -1,0 +1,3 @@
+id,name,region,source,polygon
+dahiyeh,Dahiyeh,beirut,Sentinel-1 SAR + Sentinel-2 optical,"[[35.478,33.872],[35.518,33.878],[35.536,33.852],[35.512,33.827],[35.466,33.836],[35.456,33.858]]"
+bint-jbeil,Bint Jbeil,south,Sentinel-1 SAR coherence proxy,"[[35.38,33.14],[35.45,33.15],[35.47,33.105],[35.418,33.078],[35.35,33.1]]"

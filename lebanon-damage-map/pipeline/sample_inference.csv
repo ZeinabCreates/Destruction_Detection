@@ -1,0 +1,5 @@
+date,date_label,date_description,neighborhood_id,severity,probability,confidence,buildings
+2023-10-15,"Oct 15, 2023",Pre-escalation baseline window,dahiyeh,4,0.06,0.72,18
+2024-11-05,"Nov 5, 2024",Post-event assessment image window,dahiyeh,82,0.86,0.79,1510
+2023-10-15,"Oct 15, 2023",Pre-escalation baseline window,bint-jbeil,7,0.09,0.73,38
+2024-11-05,"Nov 5, 2024",Post-event assessment image window,bint-jbeil,84,0.87,0.82,1090
